@@ -13,4 +13,6 @@ console.log('\n--- 2. rendering primitives test ---');
 await import('./scripts/render-primitives.js');
 console.log('\n--- 3. rendering index ---');
 await import('./scripts/render-index.js');
+console.log('\n--- 4. rendering landing page ---');
+await import('./scripts/render-landing.js');
 console.log('\ndone.');

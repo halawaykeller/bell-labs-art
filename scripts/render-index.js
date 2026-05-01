@@ -64,6 +64,8 @@ const html = `<!DOCTYPE html>
   .tile-id { opacity: 0.6; }
   .tile-title { opacity: 0.95; text-transform: uppercase; }
   footer { max-width: 1400px; margin: 32px auto 0; padding: 0 12px; font-size: 10px; opacity: 0.5; letter-spacing: 0.04em; }
+  footer a { margin-right: 0; }
+  footer .sep { margin: 0 8px; opacity: 0.5; }
 </style>
 </head>
 <body>
@@ -75,6 +77,8 @@ const html = `<!DOCTYPE html>
 </div>
 <footer>
   <a href="figures/primitives.static.html">PRIMITIVES TEST</a>
+  <span class="sep">·</span>
+  <a href="https://github.com/halawaykeller/bell-labs-art" target="_blank" rel="noopener">GITHUB</a>
 </footer>
 </body>
 </html>
