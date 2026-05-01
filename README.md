@@ -1,51 +1,78 @@
 # bell-labs-art
 
-HAL 9000 supervisory-display aesthetic, applied to figures from a 1932 Bell System Technical Journal paper on capacitance bridge measurement.
+A small static-SVG project: 14 figures from a 1932 Bell System Technical Journal paper on capacitance bridge measurement, redrawn as transparent SVGs in a single monospace off-white style. Renders both as interactive HTML previews and as standalone `.svg` files committed to `dist/static/`.
 
-The source material is 14 scanned figures: hand-drawn mid-century circuit schematics — Colpitts substitution bridge, potentiometer method, null-impedance bridge, Maxwell discharge method — plus accompanying equations and a vector diagram. Each is translated into a clean, transparent SVG in monospace off-white at 1px stroke: cold, precise, supervisory. The information content is preserved; the register is transposed.
+The repo is shared mostly for the build approach. A few patterns here are reusable for anyone who needs to produce a batch of structured technical diagrams as code.
 
-The diagram inside each composition is the actual deliverable. It ships at a tight viewBox so it can be dropped onto any background at any size. The 1600×1600 page composition (with its doc reference, caption, and corner telemetry) is one valid arrangement, not a constraint on the diagram itself.
+## Patterns worth stealing
+
+**Pure-string SVG primitives, no DOM.** `shared/components.js` is a single ~675-line module that exports primitive generators (`resistor`, `capacitor`, `inductor`, `galvanometer`, `ground`, `wire`, `node`, etc.) — each one returns an SVG markup string. No JSDOM, no `document`, no React. The same module is imported unmodified by browser preview pages and by Node export scripts. One source of truth for what a "resistor" looks like.
+
+**Single render path for preview and export.** The static HTML preview pages (`figures/fig-NN.static.html`) and the exported `dist/static/fig-NN.svg` files are produced from the exact same `svg(...)` calls in the same per-figure module. The preview is not a separate codepath that drifts from the export — it embeds the export verbatim. If the SVG looks right in the browser, the file on disk is the same SVG.
+
+**Primitives test sheet first.** Before any figure was built, `figures/primitives.html` was assembled as a flat grid of every primitive in every variant (different lengths, peak counts, orientations). All visual debugging happens there once, not 14 times across 14 figures. New primitives go on the sheet before they're used in compositions.
+
+**Pilot one, then scale.** Figure 02 was built end-to-end first, including export verification on multiple background colors, before the remaining 13 were attempted. The composition idioms (how to express a wire path, how to anchor a label, how a galvanometer connects to two nodes) were shaken out on the pilot, then reused as functions (`alongArm`, `plainArm`, `junction`, `nodeAnchor`) imported by the rest.
+
+**Spec / plan separation.** `CLAUDE.md` describes what the project is forever — aesthetic constraints, primitive rules, file layout. `PLAN.md` describes per-artifact interpretation — which components are in which figure, layout choices, telemetry strings. Keeping these in two files meant the spec didn't churn as the figures got built.
+
+## Build pipeline
+
+```
+node export.js
+```
+
+runs in order:
+
+1. `scripts/render-all.js` — for each figure, imports `figures/fig-NN.js`, calls its composition function, writes `dist/static/fig-NN.svg` (full composition) and `dist/static/fig-NN-diagram.svg` (tight-viewBox diagram only), and writes a `figures/fig-NN.static.html` preview page that embeds the just-rendered SVGs against three different backgrounds for compositing verification.
+2. `scripts/render-primitives.js` — regenerates the primitives test sheet.
+3. `scripts/render-index.js` — generates `index.html`, a thumbnail grid linking to each figure.
+4. `scripts/render-landing.js` — generates `landing.html`.
+
+There's no bundler. ESM modules are imported directly by Node and by `<script type="module">` in the browser.
+
+## How it was built
+
+The repo was built in iterative pairing with Claude Code. The order was:
+
+1. Examine the 14 source images, write `PLAN.md` describing each one (components, topology, where it sits on the canvas, what its caption and telemetry should say). Review and adjust the plan before any code.
+2. Write `shared/components.js` and `shared/style.css`. Build `figures/primitives.html` as a primitive test sheet. Iterate on stroke weight, line caps, joins, and proportions until the primitives read correctly against a `#444` preview background and against intended composite backgrounds (`#3d2f4a`, `#2e3863`, `#000`).
+3. Build figure 02 end-to-end as a pilot. Add composition helpers (`alongArm`, `plainArm`, `junction`, `nodeAnchor`) to `components.js` as the figure exposes a need for them. Verify the static SVG composites cleanly onto the test backgrounds.
+4. Build the remaining 13 figures using the same patterns. Each new figure occasionally surfaced one new primitive (a galvanometer variant, a switch, a vector arrow); those went onto the primitives sheet before being used.
+5. Wire `export.js` to run the full render pipeline in one command.
+
+What worked: making the primitives library and a single pilot figure good before scaling. What slowed things down: building primitives without a downstream caller — it was easy to make one that looked fine on the test sheet but didn't compose well in a real figure. The pilot caught several of those.
 
 ## Layout
 
 ```
-inputs/                source screenshots from the BSTJ paper + hal-refs/ aesthetic targets
-shared/
-  style.css            typography + color tokens (preview pages render against #444)
-  components.js        SVG primitive generators: resistor, capacitor, inductor,
-                       galvanometer, ground, switch, wire, node
-figures/
-  primitives.html      primitive test sheet (preview)
-  fig-NN.html          per-figure animated preview pages
-  fig-NN.static.html   static composition pages used to render the SVG exports
-  fig-NN.js            GSAP timeline + composition for figure NN
-scripts/               render + preview helpers
-dist/
-  static/              transparent static SVG exports (the deliverable)
-  animated/            transparent animated SVG exports (SMIL)
-PLAN.md                per-figure interpretation: components, layout, telemetry
-CLAUDE.md              evergreen project spec — aesthetic + structural rules
+shared/components.js     SVG primitive generators (pure-string, browser + Node)
+shared/style.css         preview-page styles only; SVGs themselves are styleless
+
+figures/primitives.html  primitive test sheet
+figures/fig-NN.js        composition function for figure NN
+figures/fig-NN.static.html  preview embedding the rendered SVG against test backgrounds
+
+scripts/render-all.js    walks all figures, writes dist/static/*.svg + previews
+scripts/render-primitives.js, render-index.js, render-landing.js
+export.js                top-level driver
+
+dist/static/             committed SVG outputs
+
+inputs/                  source scans from the BSTJ paper + visual reference targets
+PLAN.md                  per-figure interpretation
+CLAUDE.md                evergreen project spec
 ```
 
-## Aesthetic, in one paragraph
-
-Transparent background. Foreground is `#f0eef2` only — no second color. 1px strokes (0.5px where it reads well), no thick lines. IBM Plex Mono throughout. Each figure sits on a 1600×1600 canvas with a fake doc reference (e.g. `BSTJ V11 N1 / FIG 02 / 1932`), a terse uppercase caption, and 4–5 lines of plausible telemetry. The original script-italic node labels become plain mono caps. See `CLAUDE.md` for the full spec.
-
-## Preview
+## Run it
 
 ```
-npm run serve     # python3 -m http.server 5173
+npm run serve            # python3 -m http.server 5173
+node export.js           # rebuild everything in dist/static and the preview pages
 ```
 
-Open `http://localhost:5173/figures/primitives.html` for the primitive sheet, or `figures/fig-NN.html` for an individual figure. Preview pages render against a neutral `#444` background so the white strokes are visible during development — the SVGs themselves are fully transparent.
+Open `http://localhost:5173/index.html` for the figure index, or any individual `figures/fig-NN.static.html`.
 
-## Status
+## Source material
 
-- [x] Shared primitives (`shared/components.js`)
-- [x] fig-02 — Colpitts Substitution Bridge (pilot)
-- [ ] fig-01, 03–14 — in progress per `PLAN.md`
-- [ ] `dist/` exports
-
-## Source
-
-Figures are from a 1932 BSTJ paper on capacitance bridge measurement. The doc references in the corners (`BSTJ V11 N1`, etc.) are *plausible* — they are authored to fit the visual register, not archivally accurate.
+Figures are from a 1932 BSTJ paper on capacitance bridge measurement. The doc references in the corners of the compositions (e.g. `BSTJ V11 N1 / FIG 02 / 1932`) are plausible but authored — they fit the visual register and are not archivally accurate.
