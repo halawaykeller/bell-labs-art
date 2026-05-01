@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Primitives Test — bell-labs-art</title>
+    <link rel="stylesheet" href="../shared/style.css" />
+    <style>
+      .legend {
+        font-size: 11px;
+        opacity: 0.7;
+        margin-bottom: 6px;
+        letter-spacing: 0.05em;
+      }
+      .surround {
+        outline: 1px dashed rgba(240, 238, 242, 0.18);
+      }
+      h1 {
+        font-weight: 500;
+        font-size: 13px;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+        margin: 0 0 4px 0;
+      }
+      header {
+        max-width: 1100px;
+        margin: 24px auto 0;
+        padding: 0 40px;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Primitives test</h1>
+      <p class="legend">
+        Same primitives rendered with shape-rendering="geometricPrecision" (top)
+        and "crispEdges" (bottom). #f0eef2 stroke on transparent SVG over the
+        #444 page background. Pick whichever reads cleaner.
+      </p>
+    </header>
+
+    <div class="preview-stack">
+      <section>
+        <h2>geometricPrecision</h2>
+        <svg
+          id="grid-gp"
+          viewBox="0 0 1100 720"
+          width="1100"
+          height="720"
+          shape-rendering="geometricPrecision"
+          class="surround"
+          style="font-family: 'IBM Plex Mono', monospace;"
+        ></svg>
+      </section>
+
+      <section>
+        <h2>crispEdges</h2>
+        <svg
+          id="grid-ce"
+          viewBox="0 0 1100 720"
+          width="1100"
+          height="720"
+          shape-rendering="crispEdges"
+          class="surround"
+          style="font-family: 'IBM Plex Mono', monospace;"
+        ></svg>
+      </section>
+    </div>
+
+    <script type="module">
+      import {
+        resistor,
+        capacitor,
+        varCapacitor,
+        inductor,
+        galvanometer,
+        ground,
+        switchSym,
+        node,
+        wire,
+        vectorArrow,
+        equationLine,
+        gridAxes,
+        COLOR,
+      } from '../shared/components.js';
+
+      // Cells laid out on a 4x3 grid inside 1100x720
+      const COLS = 4;
+      const ROWS = 3;
+      const CELL_W = 1100 / COLS;
+      const CELL_H = 720 / ROWS;
+
+      const items = [
+        {
+          label: 'RESISTOR',
+          render: (cx, cy) => resistor({ x: cx - 60, y: cy, length: 120 }),
+        },
+        {
+          label: 'RESISTOR (V)',
+          render: (cx, cy) =>
+            resistor({ x: cx, y: cy - 60, length: 120, orientation: 'v' }),
+        },
+        {
+          label: 'CAPACITOR',
+          render: (cx, cy) => capacitor({ x: cx - 36, y: cy }),
+        },
+        {
+          label: 'VAR. CAPACITOR',
+          render: (cx, cy) => varCapacitor({ x: cx - 36, y: cy }),
+        },
+        {
+          label: 'INDUCTOR',
+          render: (cx, cy) => inductor({ x: cx - 60, y: cy, length: 120 }),
+        },
+        {
+          label: 'GALVANOMETER',
+          render: (cx, cy) => galvanometer({ x: cx, y: cy }),
+        },
+        {
+          label: 'GROUND',
+          render: (cx, cy) =>
+            wire([
+              [cx, cy - 28],
+              [cx, cy],
+            ]) + ground({ x: cx, y: cy }),
+        },
+        {
+          label: 'SWITCH (OPEN)',
+          render: (cx, cy) => switchSym({ x: cx - 25, y: cy, length: 50 }),
+        },
+        {
+          label: 'NODE',
+          render: (cx, cy) => node({ x: cx, y: cy, label: 'A' }),
+        },
+        {
+          label: 'WIRE',
+          render: (cx, cy) =>
+            wire([
+              [cx - 70, cy + 30],
+              [cx - 70, cy - 30],
+              [cx + 70, cy - 30],
+              [cx + 70, cy + 30],
+            ]),
+        },
+        {
+          label: 'VECTOR ARROW',
+          render: (cx, cy) =>
+            vectorArrow({
+              x1: cx - 40,
+              y1: cy + 30,
+              x2: cx + 40,
+              y2: cy - 30,
+              label: 'V',
+            }),
+        },
+        {
+          label: 'EQUATION',
+          render: (cx, cy) =>
+            equationLine({
+              x: cx,
+              y: cy + 6,
+              text: 'C_{12} = (R′/R″) C′',
+              size: 18,
+              align: 'middle',
+            }),
+        },
+      ];
+
+      function buildGrid() {
+        let body = '';
+        items.forEach((item, idx) => {
+          const col = idx % COLS;
+          const row = Math.floor(idx / COLS);
+          const cx = col * CELL_W + CELL_W / 2;
+          const cy = row * CELL_H + CELL_H / 2 - 12;
+          // Cell border for visual separation (#f0eef2 at low opacity)
+          body += `<rect x="${col * CELL_W + 8}" y="${row * CELL_H + 8}" width="${CELL_W - 16}" height="${CELL_H - 16}" stroke="${COLOR}" stroke-width="0.5" fill="none" opacity="0.18"/>`;
+          body += item.render(cx, cy);
+          // Label at the bottom of each cell
+          const ly = (row + 1) * CELL_H - 18;
+          body += `<text x="${cx}" y="${ly}" font-size="11" font-family="'IBM Plex Mono', monospace" fill="${COLOR}" text-anchor="middle" letter-spacing="1">${item.label}</text>`;
+        });
+        return body;
+      }
+
+      const content = buildGrid();
+      document.getElementById('grid-gp').innerHTML = content;
+      document.getElementById('grid-ce').innerHTML = content;
+    </script>
+  </body>
+</html>
