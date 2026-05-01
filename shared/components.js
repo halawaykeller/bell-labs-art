@@ -452,3 +452,224 @@ export function scanLine({
 } = {}) {
   return `<rect x="0" y="-2" width="${n(canvasWidth)}" height="2" fill="${COLOR}" opacity="${opacity}" class="${cls}"/>`;
 }
+
+// =====================================================================
+// Diagram routing helpers — shared between figure files
+// =====================================================================
+
+// Place a horizontal generator centered along the line from p1 to p2,
+// with `gap` clearance from each end node. Returns lead-wires + the
+// rotated component group. `generator` is called with { length, ...opts }
+// and must return SVG-string content drawn horizontally from x=0 to x=length
+// centered on y=0.
+export function alongArm(p1, p2, gap, generator, length, opts = {}) {
+  const dx = p2[0] - p1[0];
+  const dy = p2[1] - p1[1];
+  const total = Math.hypot(dx, dy);
+  const ang = (Math.atan2(dy, dx) * 180) / Math.PI;
+  const ux = dx / total;
+  const uy = dy / total;
+  const visStart = [p1[0] + ux * gap, p1[1] + uy * gap];
+  const visEnd = [p2[0] - ux * gap, p2[1] - uy * gap];
+  const compStartDist = (total - length) / 2;
+  const cs = [p1[0] + ux * compStartDist, p1[1] + uy * compStartDist];
+  const ce = [
+    p1[0] + ux * (compStartDist + length),
+    p1[1] + uy * (compStartDist + length),
+  ];
+  return (
+    wire([visStart, cs]) +
+    `<g transform="translate(${n(cs[0])} ${n(cs[1])}) rotate(${n(ang)})">${generator({ length, ...opts })}</g>` +
+    wire([ce, visEnd])
+  );
+}
+
+// Plain wire from p1 to p2 with `gap` clearance on each end (pads past
+// nodes so the wire doesn't visually overlap the node circle).
+export function plainArm(p1, p2, gap = 0) {
+  if (gap === 0) return wire([p1, p2]);
+  const dx = p2[0] - p1[0];
+  const dy = p2[1] - p1[1];
+  const total = Math.hypot(dx, dy);
+  const ux = dx / total;
+  const uy = dy / total;
+  return wire([
+    [p1[0] + ux * gap, p1[1] + uy * gap],
+    [p2[0] - ux * gap, p2[1] - uy * gap],
+  ]);
+}
+
+// Junction dot — small filled circle showing a wire tap.
+export function junction(x, y, r = 3) {
+  return `<circle cx="${n(x)}" cy="${n(y)}" r="${n(r)}" fill="${COLOR}"/>`;
+}
+
+// Anchor a wire on a node circle's circumference at the angle pointing
+// toward `target`. Returns the on-circumference [x, y].
+export function nodeAnchor(node, target, r) {
+  const dx = target[0] - node[0];
+  const dy = target[1] - node[1];
+  const len = Math.hypot(dx, dy) || 1;
+  return [node[0] + (dx / len) * r, node[1] + (dy / len) * r];
+}
+
+// Plain text label — convenience over a raw <text>.
+export function label({
+  x = 0,
+  y = 0,
+  text = '',
+  size = 14,
+  align = 'middle',
+  weight = FONT_WEIGHT,
+  cls,
+} = {}) {
+  return `<text x="${n(x)}" y="${n(y)}" font-size="${n(size)}" font-family="'IBM Plex Mono', monospace" font-weight="${weight}" fill="${COLOR}" text-anchor="${align}"${cls ? ` class="${cls}"` : ''}>${escapeText(text)}</text>`;
+}
+
+// Italicized text label (for engineering script-like labels: R, L, C, etc.
+// — even though we're rendering in mono, italic mono adds variation).
+export function italic({
+  x = 0,
+  y = 0,
+  text = '',
+  size = 14,
+  align = 'middle',
+  weight = FONT_WEIGHT,
+  cls,
+} = {}) {
+  return `<text x="${n(x)}" y="${n(y)}" font-size="${n(size)}" font-family="'IBM Plex Mono', monospace" font-style="italic" font-weight="${weight}" fill="${COLOR}" text-anchor="${align}"${cls ? ` class="${cls}"` : ''}>${escapeText(text)}</text>`;
+}
+
+// Transformer — two inductors stacked with a center bar between them
+// indicating the iron core. Both coils horizontal; suitable for placing
+// on horizontal wires. Returns content centered on (0, 0).
+export function transformer({
+  x = 0,
+  y = 0,
+  length = 80,
+  loops = 4,
+  coilGap = 6,
+  cls,
+} = {}) {
+  const r = length / (loops * 2);
+  // Two coils: one above center, one below
+  let coil1 = `M 0 0`;
+  let coil2 = `M 0 0`;
+  for (let i = 0; i < loops; i++) {
+    const ex = (i + 1) * 2 * r;
+    coil1 += ` A ${n(r)} ${n(r)} 0 0 1 ${n(ex)} 0`;
+    coil2 += ` A ${n(r)} ${n(r)} 0 0 0 ${n(ex)} 0`;
+  }
+  // Center bar (iron core, drawn as 2 thin parallel lines)
+  const bar1 = -1.5;
+  const bar2 = 1.5;
+  return at(
+    x - length / 2,
+    y,
+    `<g transform="translate(0 ${n(-coilGap - r)})"><path d="${coil1}" ${strokeAttrs(STROKE, { cls })}/></g>` +
+      `<g transform="translate(0 ${n(coilGap + r)})"><path d="${coil2}" ${strokeAttrs(STROKE, { cls })}/></g>` +
+      `<line x1="0" y1="${n(bar1)}" x2="${n(length)}" y2="${n(bar1)}" stroke="${COLOR}" stroke-width="${FINE}" stroke-linecap="round"/>` +
+      `<line x1="0" y1="${n(bar2)}" x2="${n(length)}" y2="${n(bar2)}" stroke="${COLOR}" stroke-width="${FINE}" stroke-linecap="round"/>`,
+  );
+}
+
+// Vacuum tube envelope — circle outline. The internal elements
+// (filament, grid, plate) are figure-specific so they're not baked in.
+export function tubeEnvelope({ x = 0, y = 0, r = 60, cls } = {}) {
+  return `<circle cx="${n(x)}" cy="${n(y)}" r="${n(r)}" ${strokeAttrs(STROKE, { cls })}/>`;
+}
+
+// Determinant bars — draws two vertical lines flanking a content block,
+// used in matrix-determinant equations. Caller positions content inside.
+export function determinantBars({
+  x = 0,
+  y = 0,
+  height = 100,
+  width = 200,
+  barLen = 12,
+  cls,
+} = {}) {
+  const left = x;
+  const right = x + width;
+  const top = y;
+  const bot = y + height;
+  // Vertical bar with small horizontal serifs at top and bottom (giving
+  // a subtle "matrix bracket" feel without going full square brackets).
+  const bar = (bx) => `<line x1="${n(bx)}" y1="${n(top)}" x2="${n(bx)}" y2="${n(bot)}" ${strokeAttrs(STROKE, { cls })}/>`;
+  return bar(left) + bar(right);
+}
+
+// Fraction bar — horizontal line for displayed fractions.
+export function fractionBar({
+  x = 0,
+  y = 0,
+  width = 240,
+  cls,
+} = {}) {
+  return `<line x1="${n(x - width / 2)}" y1="${n(y)}" x2="${n(x + width / 2)}" y2="${n(y)}" ${strokeAttrs(STROKE, { cls })}/>`;
+}
+
+// =====================================================================
+// Displayed math helpers
+// =====================================================================
+
+// A vertically-stacked fraction: numerator over denominator with a horizontal
+// bar between. Returns SVG content centered horizontally on `x`, with the
+// bar at `y`.
+export function fraction({
+  x = 0,
+  y = 0,
+  num = '',
+  den = '',
+  size = 22,
+  barWidth,
+  cls,
+} = {}) {
+  const w = barWidth ?? Math.max(num.length, den.length) * size * 0.55;
+  const numY = y - size * 0.32;
+  const denY = y + size * 0.85;
+  return (
+    equationLine({ x, y: numY, text: num, size, align: 'middle', cls }) +
+    fractionBar({ x, y, width: w, cls }) +
+    equationLine({ x, y: denY, text: den, size, align: 'middle', cls })
+  );
+}
+
+// Lay out a matrix of cells (rows × cols) flanked by vertical determinant
+// bars. `rows` is an array of row-arrays of cell strings (using equationLine
+// markup for subscripts). Returns content centered on (x, y).
+export function determinantMatrix({
+  x = 0,
+  y = 0,
+  rows = [],
+  cellW = 56,
+  cellH = 32,
+  size = 18,
+  barPad = 14,
+  cls,
+} = {}) {
+  const nRows = rows.length;
+  const nCols = Math.max(0, ...rows.map((r) => r.length));
+  if (nRows === 0 || nCols === 0) return '';
+  const totalW = cellW * nCols;
+  const totalH = cellH * nRows;
+  const left = x - totalW / 2;
+  const top = y - totalH / 2;
+  let s = '';
+  // Cells
+  for (let r = 0; r < nRows; r++) {
+    for (let c = 0; c < nCols; c++) {
+      const cellText = rows[r][c] ?? '';
+      if (!cellText) continue;
+      const cx = left + c * cellW + cellW / 2;
+      const cy = top + r * cellH + cellH * 0.6;
+      s += equationLine({ x: cx, y: cy, text: cellText, size, align: 'middle', cls });
+    }
+  }
+  // Vertical bars
+  const barTop = top - 4;
+  const barBot = top + totalH + 4;
+  s += `<line x1="${n(left - barPad)}" y1="${n(barTop)}" x2="${n(left - barPad)}" y2="${n(barBot)}" stroke="${COLOR}" stroke-width="${STROKE}" stroke-linecap="round"${cls ? ` class="${cls}"` : ''}/>`;
+  s += `<line x1="${n(left + totalW + barPad)}" y1="${n(barTop)}" x2="${n(left + totalW + barPad)}" y2="${n(barBot)}" stroke="${COLOR}" stroke-width="${STROKE}" stroke-linecap="round"${cls ? ` class="${cls}"` : ''}/>`;
+  return s;
+}

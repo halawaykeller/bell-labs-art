@@ -244,8 +244,8 @@ Equations (figs 07–09, 12) inherit the paper attribution of the figure they ac
 
 ---
 
-## Open items at this gate
+## Resolutions
 
-- **fig-04 vs fig-05 disambiguation**: I'll commit to "variant a / variant b" interpretation in PLAN.md but verify when I have the redraw side-by-side. If the two are genuinely identical I'll collapse to 13 figures and renumber.
-- **Canvas placement is tunable**: the placements above are starting points for the 1600 composition. The diagram's internal proportions are the real deliverable; canvas position can shift after fig-02 ships if the composition feels too centered/static.
-- **Telemetry exact strings**: open to redirection on any of these. The format follows CLAUDE.md's example `BAL.NULL .00021 / R1/R2 .8472 / FREQ 1KHZ / Q .043 / FUNCTION REF` — terse uppercase, dotted abbreviations, monospace-aligned.
+- **fig-04 vs fig-05**: the two screenshots are visually identical scans of the same BSTJ "Fig. 4". To honor "use all 14" without inventing content, fig-05 is rendered as the "redrawn for analysis" form of fig-04 — same Y-network, but the T₂ transformer is *inlined* in the B-arm path (drawn as two stacked coils with iron-core dashes between them) instead of appearing as a separate dashed-rectangle module on the right of the chassis. Layout is also slightly more compact. The two figures share topology but read as a published-then-simplified pair.
+- **Canvas placement**: the placements were tunable; final positions chosen per figure. Diagrams' internal proportions are the deliverable.
+- **Telemetry strings**: all authored. Open to redirection on any specific values.

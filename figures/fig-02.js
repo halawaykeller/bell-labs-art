@@ -24,6 +24,10 @@ import {
   docRef,
   caption,
   telemetry,
+  alongArm,
+  plainArm,
+  junction,
+  nodeAnchor,
   COLOR,
 } from '../shared/components.js';
 
@@ -65,43 +69,6 @@ export const DIAGRAM_BOUNDS = {
 // -------------------------------------------------------------
 // Helpers
 // -------------------------------------------------------------
-function alongArm(p1, p2, gap, generator, length, opts = {}) {
-  const dx = p2[0] - p1[0];
-  const dy = p2[1] - p1[1];
-  const total = Math.hypot(dx, dy);
-  const ang = (Math.atan2(dy, dx) * 180) / Math.PI;
-  const ux = dx / total;
-  const uy = dy / total;
-  const visStart = [p1[0] + ux * gap, p1[1] + uy * gap];
-  const visEnd = [p2[0] - ux * gap, p2[1] - uy * gap];
-  const compStartDist = (total - length) / 2;
-  const cs = [
-    p1[0] + ux * compStartDist,
-    p1[1] + uy * compStartDist,
-  ];
-  const ce = [
-    p1[0] + ux * (compStartDist + length),
-    p1[1] + uy * (compStartDist + length),
-  ];
-  return (
-    wire([visStart, cs]) +
-    `<g transform="translate(${cs[0].toFixed(2)} ${cs[1].toFixed(2)}) rotate(${ang.toFixed(2)})">${generator({ length, ...opts })}</g>` +
-    wire([ce, visEnd])
-  );
-}
-
-function plainArm(p1, p2, gap = NODE_R) {
-  const dx = p2[0] - p1[0];
-  const dy = p2[1] - p1[1];
-  const total = Math.hypot(dx, dy);
-  const ux = dx / total;
-  const uy = dy / total;
-  return wire([
-    [p1[0] + ux * gap, p1[1] + uy * gap],
-    [p2[0] - ux * gap, p2[1] - uy * gap],
-  ]);
-}
-
 function inlineCap(p1, p2, padFromNode = SN_R) {
   return alongArm(
     p1,
@@ -111,10 +78,6 @@ function inlineCap(p1, p2, padFromNode = SN_R) {
       capacitor({ ...opts, plateLen: 18, gap: 7, leadLen: 7 }),
     22,
   );
-}
-
-function junction(x, y, r = 3) {
-  return `<circle cx="${x}" cy="${y}" r="${r}" fill="${COLOR}"/>`;
 }
 
 // -------------------------------------------------------------
@@ -150,7 +113,7 @@ export function buildDiagram() {
   // === BRIDGE ARMS ===
   s += alongArm(A, B, NODE_R, (opts) => resistor({ ...opts, height: 12 }), 150);
   s += alongArm(B, C, NODE_R, (opts) => resistor({ ...opts, height: 12 }), 150);
-  s += plainArm(C, D);
+  s += plainArm(C, D, NODE_R);
   s += alongArm(
     D,
     A,
