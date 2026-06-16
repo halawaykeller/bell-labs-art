@@ -13,7 +13,7 @@ node export.js     # rebuild dist/static and the preview pages
 
 Open `http://localhost:5173/index.html` for the figure index, or any `figures/fig-NN.static.html`.
 
-## Patterns worth stealing
+## Bits and bobs
 
 - **Pure-string SVG primitives, no DOM.** `shared/components.js` (~675 lines) exports generators like `resistor`, `capacitor`, `inductor`, `galvanometer`, `ground`, `wire`, `node`. Each returns an SVG markup string. No JSDOM, no `document`, no React. Browser preview pages and Node export scripts import the same module.
 - **One render path for preview and export.** `figures/fig-NN.static.html` and `dist/static/fig-NN.svg` come from the same `svg(...)` calls in the same module. The preview embeds the export verbatim, so they can't drift.
