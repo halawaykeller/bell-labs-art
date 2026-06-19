@@ -4,6 +4,7 @@
 //      and per-figure preview pages (figures/fig-NN.static.html)
 //   2. Generate the primitives test page
 //   3. Generate index.html (thumbnail grid; reads from dist/static)
+//   4. Generate landing.html (reroll-a-figure page; inlines every composition)
 //
 // Usage: node export.js
 
