@@ -11,7 +11,6 @@ import {
   docRef,
   caption,
   telemetry,
-  equationLine,
   label,
   COLOR,
   STROKE,

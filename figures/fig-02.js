@@ -27,8 +27,6 @@ import {
   alongArm,
   plainArm,
   junction,
-  nodeAnchor,
-  COLOR,
 } from '../shared/components.js';
 
 // -------------------------------------------------------------

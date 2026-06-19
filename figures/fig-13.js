@@ -14,7 +14,6 @@
 import {
   svg,
   inductor,
-  node,
   wire,
   docRef,
   caption,
