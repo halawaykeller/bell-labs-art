@@ -12,6 +12,9 @@ export const STROKE = 1.4;
 export const FINE = 0.75;
 export const FONT_WEIGHT = 500;
 
+// Format a number for SVG coordinate output: integers stay bare, everything
+// else is clamped to 3 decimal places (and re-parsed to drop trailing zeros)
+// so the generated path data stays compact.
 const n = (v) => {
   if (Number.isInteger(v)) return String(v);
   return Number(v.toFixed(3)).toString();
@@ -27,6 +30,8 @@ const strokeAttrs = (w = STROKE, opts = {}) => {
 const escapeText = (s) =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
+// Wrap `body` in a translate group at (x, y). When both are zero the wrapper
+// is pointless, so return the body as-is to keep the markup lean.
 const at = (x, y, body) => {
   if (!x && !y) return body;
   return `<g transform="translate(${n(x)} ${n(y)})">${body}</g>`;
